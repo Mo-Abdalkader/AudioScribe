@@ -101,7 +101,7 @@ audioscribe/
 ### 1. Fork / Clone
 
 ```bash
-git clone https://github.com/yourusername/audioscribe.git
+git clone https://github.com/Mo-Abdalkader/audioscribe.git
 cd audioscribe
 ```
 
@@ -147,7 +147,7 @@ MAX_FILE_SIZE_MB     = 50                  # change if needed
 ### Setup
 
 ```bash
-git clone https://github.com/yourusername/audioscribe.git
+git clone https://github.com/Mo-Abdalkader/audioscribe.git
 cd audioscribe
 
 python -m venv venv

@@ -7,18 +7,19 @@
 [![Python](https://img.shields.io/badge/Python-3.11+-blue?style=flat&logo=python)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?style=flat&logo=fastapi)](https://fastapi.tiangolo.com)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat)](LICENSE)
-[![Railway](https://img.shields.io/badge/Deployed%20on-Railway-0B0D0E?style=flat&logo=railway)](https://railway.app)
+[![Render](https://img.shields.io/badge/Deploy%20on-Render-46E3B7?style=flat&logo=render)](https://render.com)
+[![Railway](https://img.shields.io/badge/Deploy%20on-Railway-0B0D0E?style=flat&logo=railway)](https://railway.app)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Mohamed_Abdalkader-0077B5?style=flat&logo=linkedin)](https://www.linkedin.com/in/mo-abdalkader/)
 
 ---
 
 ### 🌐 Live App
 
-**Try it now:** [audioscribe-production.up.railway.app](https://audioscribe-production.up.railway.app)
+**Try it now:** Deploy your own (see below) — Railway credits expired
 
 ### 🤖 Telegram Bot
 
-**Open in Telegram:** [@video_audio_summary_bot](https://t.me/video_audio_summary_bot)
+**Open in Telegram:** [@video_audio_summary_bot](https://t.me/video_audio_summary_bot) *(will be back online after redeploy)*
 
 Send any audio/video file or paste a YouTube/Google Drive/Dropbox link — get a full transcript, intelligent summary, and subtitle files (SRT/VTT) in a ZIP bundle.
 
@@ -137,14 +138,30 @@ python main.py
 
 ---
 
-## 🌐 Deploy to Railway (One-Click)
+## 🌐 Deploy
+
+### Render (No Credit Card Needed)
+
+1. **Fork** this repository
+2. Go to [render.com](https://render.com) → **New Web Service** → Connect GitHub
+3. Use these settings:
+
+   | Setting | Value |
+   |---|---|
+   | **Build Command** | `apt-get update && apt-get install -y ffmpeg && pip install -r requirements.txt` |
+   | **Start Command** | `python main.py` |
+   | **Instance** | **Free** |
+
+4. Set env vars: `TELEGRAM_BOT_TOKEN`, `GROQ_API_KEYS`, `WEB_SECRET_KEY`
+5. **Deploy** — app lives at `https://audioscribe.onrender.com`
+
+> Free tier sleeps after 15 min idle. Create a free [UptimeRobot](https://uptimerobot.com) monitor pinging `/health` every 5 min to keep it awake.
+
+### Railway (Requires Credit Card)
 
 1. **Fork** this repository
 2. Create a new **Railway project** → Deploy from GitHub
-3. Set environment variables:
-   - `TELEGRAM_BOT_TOKEN` — From @BotFather
-   - `GROQ_API_KEYS` — From console.groq.com
-   - `WEB_SECRET_KEY` — Generate a random string
+3. Set env vars: `TELEGRAM_BOT_TOKEN`, `GROQ_API_KEYS`, `WEB_SECRET_KEY`
 4. Railway handles everything automatically:
    - `Procfile` → runs `python main.py`
    - `nixpacks.toml` → installs ffmpeg + Python 3.11

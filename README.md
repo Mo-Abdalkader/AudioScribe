@@ -1,303 +1,286 @@
-# ◈ AudioScribe
+<div align="center">
 
-**AI-powered audio & video transcription and summarization.**
-Upload any audio or video file — get a full transcript, intelligent summary in English, Arabic, or Egyptian dialect, and a ZIP bundle. No GPU required.
+# 🎙 AudioScribe
+
+**AI-powered audio & video transcription and summarization — no GPU required.**
+
+[![Python](https://img.shields.io/badge/Python-3.11+-blue?style=flat&logo=python)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?style=flat&logo=fastapi)](https://fastapi.tiangolo.com)
+[![License](https://img.shields.io/badge/License-MIT-green?style=flat)](LICENSE)
+[![Railway](https://img.shields.io/badge/Deployed%20on-Railway-0B0D0E?style=flat&logo=railway)](https://railway.app)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Mohamed_Abdalkader-0077B5?style=flat&logo=linkedin)](https://www.linkedin.com/in/mo-abdalkader/)
 
 ---
 
-## Features
+### 🌐 Live App
 
-| Feature | Details |
+**Try it now:** [audioscribe-production.up.railway.app](https://audioscribe-production.up.railway.app)
+
+### 🤖 Telegram Bot
+
+**Open in Telegram:** [@video_audio_summary_bot](https://t.me/video_audio_summary_bot)
+
+Send any audio/video file or paste a YouTube/Google Drive/Dropbox link — get a full transcript, intelligent summary, and subtitle files (SRT/VTT) in a ZIP bundle.
+
+---
+
+</div>
+
+## ✨ What You Can Do
+
+| | |
 |---|---|
-| 🎙 Transcription | Whisper Large-v3 via Groq API — fast, accurate, 90+ languages |
-| 🧠 Summarization | Llama 3.3 70B — structured summaries, map-reduce for long files |
-| 🇪🇬 Egyptian Dialect | Special support for Egyptian Arabic (العامية المصرية) |
-| 🌐 Multi-Language | English, Arabic (MSA), or Egyptian output |
-| 📝 Multiple Formats | Export as TXT, SRT (subtitles), VTT |
-| 📦 Bundle Output | ZIP with transcript, summaries (TXT + Markdown), subtitles |
-| 🔑 Your API Key | Use your own Groq API key for unlimited processing |
-| 🤖 Telegram Bot | Send files directly via Telegram, get results back |
-| 🌍 Web Interface | Dark, responsive web UI with drag-and-drop upload |
-| ⚡ Smart Chunking | 25s overlapping chunks — no words lost at boundaries |
-| 🎭 Summary Tone | Professional, casual, or technical |
-| 📋 Brief/Detailed | Choose summary length |
-| 🚀 Railway-Ready | One-command deploy, ffmpeg included, no GPU needed |
+| 🎙 **Transcribe** | Upload any audio/video file or paste a link → get timestamped transcript |
+| 🧠 **Summarize** | AI summary in English, Arabic, or Egyptian dialect (Llama 3.3 70B) |
+| 🎞 **Subtitles** | SRT/VTT subtitle files — embed into any video player |
+| 📦 **ZIP Bundle** | Everything in one download: transcript + summaries + subtitles |
+| 🔗 **URL Support** | YouTube, Google Drive, Dropbox, or any direct media link |
+| 🤖 **Telegram Bot** | Process files on the go — no browser needed |
+| 📱 **PWA** | Installable on mobile/desktop — works offline |
+| 🔒 **Private** | Your own Groq API key unlocks unlimited processing (optional) |
 
 ---
 
-## How It Works
+## ⚙️ How It Works
 
 ```
-User (Web or Telegram)
+User (Web UI or Telegram)
         │
         ▼
-   Upload file
+   [1] Upload file or paste URL
         │
         ▼
-  [1] Validate (format, size, duration)
+   [2] Validate format · size · duration
         │
         ▼
-  [2] Extract audio (if video — ffmpeg)
+   [3] Extract audio from video (ffmpeg — if needed)
         │
         ▼
-  [3] Chunk audio (25s segments, 3s overlap)
+   [4] Chunk into 25s segments with 3s overlap
         │
         ▼
-  [4] Transcribe each chunk (Groq Whisper Large-v3 API)
+   [5] Transcribe each chunk (Groq Whisper Large-v3)
         │
         ▼
-  [5] Merge + trim overlaps
+   [6] Merge chunks · deduplicate overlaps
         │
         ▼
-  [6] Summarize (Groq Llama 3.3 70B — map-reduce for long content)
+   [7] Summarize (Llama 3.3 70B — map-reduce for long content)
+        │      Style: brief/detailed · Tone: pro/casual/technical
+        │      Languages: English · Arabic · Egyptian
+        ▼
+   [8] Package → Transcript · Script · SRT · VTT · Summary · ZIP
         │
         ▼
-  [7] Package outputs → ZIP (transcript + summaries + subtitles)
-        │
-        ▼
-  Deliver to user (download links / Telegram files)
+   Deliver to your device
 ```
+
+All processing happens server-side. No GPU needed — Groq handles the AI.
+
+### Supported Formats
+
+**Audio:** MP3, WAV, M4A, OGG, FLAC, AAC, OPUS, WEBM  
+**Video:** MP4, MKV, AVI, MOV, WMV, FLV, M4V
 
 ---
 
-## Project Structure
-
-```
-audioscribe/
-├── main.py                   # Entry point (starts web server + bot)
-├── config.py                 # All config constants, loaded from .env
-├── requirements.txt
-├── Procfile                  # Railway process definition
-├── nixpacks.toml             # Railway build config (installs ffmpeg)
-├── .env.example              # Environment variable template
-├── .env                     # Your configuration (create from .env.example)
-│
-├── core/
-│   ├── audio.py              # Stage 1+2: File validation, video extraction, chunking
-│   ├── transcriber.py        # Stage 3: Groq Whisper API transcription
-│   ├── summarizer.py         # Stage 4: LLM summarization (Groq/Cohere)
-│   ├── output_manager.py     # Stage 5: Write files, create ZIP
-│   └── pipeline.py           # Orchestrates all stages end-to-end
-│
-├── bot/
-│   ├── main.py               # Telegram Application setup, command registration
-│   └── handlers.py           # All command + file message handlers
-│
-├── web/
-│   ├── app.py                # FastAPI server + REST API + webhook receiver
-│   ├── templates/
-│   │   └── index.html        # Web UI
-│   └── static/
-│       ├── images/
-│       │   └── logo.png     # Your logo
-│       ├── css/style.css    # Dark editorial design
-│       └── js/app.js        # Upload, polling, download logic
-```
-
----
-
-## Quick Deploy to Railway
-
-### 1. Fork / Clone
-
-```bash
-git clone https://github.com/Mo-Abdalkader/audioscribe.git
-cd audioscribe
-```
-
-### 2. Create a Telegram Bot
-
-1. Message [@BotFather](https://t.me/BotFather) on Telegram
-2. Send `/newbot` and follow the prompts
-3. Copy the bot token
-
-### 3. Get a Groq API Key
-
-1. Sign up at [console.groq.com](https://console.groq.com)
-2. Create an API key (free tier is sufficient)
-3. For more quota, add multiple keys separated by commas
-
-### 4. Deploy to Railway
-
-1. Go to [railway.app](https://railway.app) → **New Project** → **Deploy from GitHub**
-2. Select your forked repo
-3. In **Variables**, add:
-
-```
-TELEGRAM_BOT_TOKEN   = your_telegram_bot_token
-GROQ_API_KEYS        = your_groq_api_key_1,your_groq_api_key_2
-COHERE_API_KEY       = your_cohere_api_key   # optional
-MAX_FILE_SIZE_MB     = 50                  # change if needed
-```
-
-4. Railway auto-detects `nixpacks.toml` → installs ffmpeg + Python deps
-5. Your app is live at `https://your-app.up.railway.app`
-
-> **Telegram webhook is set automatically** when `RAILWAY_PUBLIC_DOMAIN` is detected.
-
----
-
-## Run Locally
+## 🚀 Quick Start (Local Development)
 
 ### Prerequisites
 
-- Python 3.10+
-- ffmpeg installed (`brew install ffmpeg` / `sudo apt install ffmpeg`)
+```bash
+# Python 3.11+
+# ffmpeg (required for audio processing)
+sudo apt install ffmpeg          # Ubuntu/Debian
+brew install ffmpeg              # macOS
+# Windows: https://ffmpeg.org/download.html
+```
 
 ### Setup
 
 ```bash
-git clone https://github.com/Mo-Abdalkader/audioscribe.git
-cd audioscribe
+# Clone the repo
+git clone https://github.com/Mo-Abdalkader/AudioScribe.git
+cd AudioScribe
 
+# Create virtual environment
 python -m venv venv
-venv\Scripts\activate  # Windows
+source venv/bin/activate         # Windows: venv\Scripts\activate
+
+# Install dependencies
 pip install -r requirements.txt
 
-copy .env.example .env
-# Edit .env and add your keys
+# Configure environment
+cp .env.example .env
 ```
 
-### Start
+### Get API Keys (Free)
+
+1. **Groq API key** → [console.groq.com](https://console.groq.com) — 100K tokens/day free
+2. **Telegram Bot Token** → Message [@BotFather](https://t.me/botfather) on Telegram to create a bot
+
+Edit `.env` and fill in:
+```env
+TELEGRAM_BOT_TOKEN=your_token_here
+GROQ_API_KEYS=your_gsk_key_here
+```
+
+### Run
 
 ```bash
 python main.py
 ```
 
-Web UI: `http://localhost:8000`
-Telegram bot runs in polling mode automatically.
+- **Web UI:** [http://localhost:8000](http://localhost:8000)
+- **Telegram Bot:** Starts in polling mode automatically
+- **API Docs:** [http://localhost:8000/api/docs](http://localhost:8000/api/docs)
 
 ---
 
-## API Reference
+## 🌐 Deploy to Railway (One-Click)
 
-| Endpoint | Method | Description |
-|---|---|---|
-| `GET /` | GET | Web interface |
-| `GET /health` | GET | Health check |
-| `POST /api/process` | POST | Upload file for processing |
-| `GET /api/status/{job_id}` | GET | Poll job status + progress |
-| `GET /api/download/{job_id}/{filename}` | GET | Download output file |
-| `DELETE /api/job/{job_id}` | DELETE | Clean up job from memory |
-| `POST /webhook` | POST | Telegram webhook receiver |
+1. **Fork** this repository
+2. Create a new **Railway project** → Deploy from GitHub
+3. Set environment variables:
+   - `TELEGRAM_BOT_TOKEN` — From @BotFather
+   - `GROQ_API_KEYS` — From console.groq.com
+   - `WEB_SECRET_KEY` — Generate a random string
+4. Railway handles everything automatically:
+   - `Procfile` → runs `python main.py`
+   - `nixpacks.toml` → installs ffmpeg + Python 3.11
+   - `requirements.txt` → installs dependencies
+   - `RAILWAY_PUBLIC_DOMAIN` → auto-set for Telegram webhook mode
 
-### POST /api/process
+---
+
+## 🗂️ Project Structure
 
 ```
-Content-Type: multipart/form-data
-
-file         — audio/video file (required)
-langs        — "en", "ar", "ar-eg", or "en,ar" (default: "en")
-source_lang — source language hint: "", "en", "ar", "ar-eg" (default: auto-detect)
-style        — "plain", "md", or "both" (default: "both")
-summary_style — "brief" or "detailed" (default: "detailed")
-summary_tone — "professional", "casual", or "technical" (default: "professional")
-groq_key    — user's own Groq key (optional)
+audioscribe/
+├── main.py              # Entry point — starts the FastAPI server
+├── config.py            # Central configuration from .env
+├── Procfile             # Railway deployment process definition
+├── nixpacks.toml        # Railway build config (ffmpeg, Python)
+├── requirements.txt     # Python dependencies
+│
+├── core/                # Processing pipeline (shared by web + bot)
+│   ├── audio.py         # Audio validation, extraction, chunking
+│   ├── transcriber.py   # Groq Whisper transcription
+│   ├── summarizer.py    # Llama 3.3 / Cohere summarization
+│   ├── output_manager.py# File writing + ZIP bundling
+│   └── pipeline.py      # Orchestrates the full pipeline
+│
+├── bot/                 # Telegram bot
+│   ├── main.py          # Bot setup, command registration
+│   └── handlers.py      # All command & message handlers
+│
+└── web/                 # FastAPI web server
+    ├── app.py           # API routes, rate limiting, SSRF protection
+    ├── templates/       # HTML templates
+    └── static/          # CSS, JS, PWA, images
 ```
 
-### GET /api/status/{job_id}
+---
 
+## 📡 API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/process` | Upload audio/video file |
+| POST | `/api/process-url` | Submit YouTube/Drive/Dropbox URL |
+| GET | `/api/status/{job_id}` | Poll processing progress |
+| GET | `/api/download/{job_id}/{file}` | Download result file |
+| GET | `/api/limits` | Check rate limit status |
+| GET | `/health` | System health check |
+| DELETE | `/api/job/{job_id}` | Clean up job from memory |
+
+**Status response example:**
 ```json
 {
   "job_id": "abc123",
   "status": "done",
-  "progress": ["Chunking...", "Transcribing...", "Done!"],
+  "progress": ["Chunking...", "Transcribing 3/12 (25%)", "Done!"],
   "detected_lang": "en",
   "lang_name": "English",
-  "transcript_preview": "First 500 chars...",
-  "files": ["output_transcript.txt", "output_transcript.srt", "output_transcript.vtt", "output_summary_en.txt", "output_audioscribe.zip"]
+  "files": ["lecture-A3F9-04min-transcript.txt", "lecture-A3F9-04min-audioscribe.zip"]
 }
 ```
 
+Full API reference at `/api/docs` when the server is running.
+
 ---
 
-## Telegram Bot Commands
+## 🤖 Telegram Bot Commands
 
 | Command | Description |
 |---|---|
-| `/start` | Welcome message |
-| `/help` | Full help |
+| `/start` | Welcome & intro |
+| `/help` | Full help with your current limits |
 | `/info` | Project & developer info |
-| `/lang auto` | Auto-detect language (default) |
-| `/lang en` | English output only |
-| `/lang ar` | Arabic (MSA) output only |
-| `/lang ar-eg` | Egyptian Arabic output |
-| `/lang both` | English + Arabic |
-| `/style plain` | Plain text output |
-| `/style md` | Structured Markdown output |
-| `/style both` | Both formats (default) |
-| `/summary_style brief` | Brief summary |
-| `/summary_style detailed` | Detailed summary (default) |
-| `/summary_tone professional` | Professional tone |
-| `/summary_tone casual` | Casual/friendly tone |
-| `/summary_tone technical` | Technical tone |
-| `/key gsk_...` | Set your own Groq API key |
+| `/settings` | Open settings panel with inline buttons |
+| `/mode` | Set processing mode (full / transcript / subtitles / summary) |
+| `/lang` | Set output language (auto / en / ar / ar-eg / both) |
+| `/subtitle_lang` | Set translated subtitle language |
+| `/style` | Set summary format (plain / md / both) |
+| `/summary_style` | Set detail level (brief / detailed) |
+| `/summary_tone` | Set tone (professional / casual / technical) |
+| `/key gsk_...` | Add your own Groq API key for higher limits |
 | `/key clear` | Clear your API key |
 | `/cancel` | Cancel current processing |
 
----
-
-## Supported Formats
-
-**Audio:** `.mp3` `.wav` `.m4a` `.ogg` `.flac` `.aac` `.wma` `.opus` `.webm`
-
-**Video:** `.mp4` `.mkv` `.avi` `.mov` `.wmv` `.webm` `.flv` `.m4v`
-
-**Limits:** Configurable via .env (default: 50 MB max file size · 60 min max duration)
+Just send any audio/video file or paste a link — no command needed for that.
 
 ---
 
-## Configuration (.env)
+## 🔧 Environment Variables
+
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `TELEGRAM_BOT_TOKEN` | Yes* | — | Telegram bot token from @BotFather |
+| `GROQ_API_KEYS` | Yes* | — | Groq API key(s) from console.groq.com |
+| `COHERE_API_KEY` | No | — | Cohere fallback summarizer |
+| `WEB_SECRET_KEY` | No | `change-me` | Webhook validation secret |
+| `MAX_FILE_SIZE_MB` | No | 50 | Max file upload size |
+| `MAX_AUDIO_DURATION_MINUTES` | No | 60 | Max audio duration |
+| `FREE_DAILY_LIMIT` | No | 10 | Daily requests per Telegram user |
+| `WEB_ONLY` | No | — | Set to `1` to disable Telegram |
+
+\* At least one API key (Groq or Cohere) must be configured.
+
+---
+
+## 🤝 Contributing
+
+PRs are welcome! Here are ideas:
+- **Speaker diarization** — "who said what" using pyannote.audio
+- **Google Docs export** — one-click export to Google Docs
+- **Persistent job storage** — SQLite/Redis for job history across restarts
+- **WebSocket progress** — real-time progress instead of polling
+- **More URL sources** — additional cloud storage providers
 
 ```bash
-# ═══ Required ═══
-TELEGRAM_BOT_TOKEN=your_bot_token
-GROQ_API_KEYS=key1,key2,key3  # Multiple keys (comma-separated)
-
-# ═══ Optional ═══
-COHERE_API_KEY=fallback_key
-
-# ═══ Audio Limits ═══
-MAX_FILE_SIZE_MB=50           # Max upload size (MB)
-MAX_AUDIO_DURATION_MINUTES=60  # Max audio length (minutes)
-MAX_UPLOAD_SIZE_MB=50          # Max API upload size
-
-# ═══ Processing ═══
-CHUNK_DURATION_MS=25000       # 25 seconds per chunk
-CHUNK_OVERLAP_MS=3000         # 3 seconds overlap
-
-# ═══ Summarization ═══
-SUMMARY_CHUNK_WORDS=3500
-SUMMARY_TEMPERATURE=0.7
-SUMMARY_STYLE=detailed        # "brief" or "detailed"
-SUMMARY_TONE=professional     # "professional", "casual", "technical"
-
-# ═══ Directories ═══
-OUTPUT_TEMP_DIR=/tmp/audioscribe
-
-# ═══ Railway (auto-set) ═══
-# PORT=8000
-# RAILWAY_PUBLIC_DOMAIN=your-app.up.railway.app
+git checkout -b feature/your-feature
+# Make your changes
+git commit -m 'Add your feature'
+git push origin feature/your-feature
+# Open a Pull Request
 ```
 
 ---
 
-## Tech Stack
+## 📖 Full Documentation
 
-- **Transcription:** [Groq](https://groq.com) → Whisper Large-v3
-- **Summarization:** [Groq](https://groq.com) → Llama 3.3 70B · [Cohere](https://cohere.com) → Command R+
-- **Audio processing:** ffmpeg (direct subprocess)
-- **Web framework:** [FastAPI](https://fastapi.tiangolo.com) + [uvicorn](https://www.uvicorn.org)
-- **Telegram:** [python-telegram-bot](https://python-telegram-bot.org)
-- **Deployment:** [Railway](https://railway.app)
+For an exhaustive reference covering every class, function, configuration option, API endpoint, security detail, and architectural decision, see **[Documentation.md](./Documentation.md)**.
 
 ---
 
-## Author
+## 👤 Author
 
-**Mohamed Abdalkader** — AI Engineer & Developer  
-[LinkedIn](https://www.linkedin.com/in/mo-abdalkader/)
+**Mohamed Abdalkader** — AI Engineer
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=flat&logo=linkedin)](https://www.linkedin.com/in/mo-abdalkader/)
+[![GitHub](https://img.shields.io/badge/GitHub-181717?style=flat&logo=github)](https://github.com/Mo-Abdalkader)
 
 ---
 
-*No audio data is retained after processing. All temporary files are deleted immediately after results are delivered.*
+*No audio data is retained. All temporary files are deleted immediately after processing.*

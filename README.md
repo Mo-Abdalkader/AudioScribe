@@ -140,6 +140,16 @@ python main.py
 
 ## 🌐 Deploy
 
+### Hugging Face Spaces (Truly Free — No Card, $0 Ever)
+
+1. **Fork** this repository
+2. Go to [huggingface.co](https://huggingface.co) → **New Space** → SDK: **Docker** → Hardware: **CPU free**
+3. Set env vars: `TELEGRAM_BOT_TOKEN`, `GROQ_API_KEYS`, `WEB_SECRET_KEY`
+4. Deploy — app lives at `https://yourusername-audioscribe.hf.space`
+5. Create a free [cron-job.org](https://cron-job.org) monitor pinging `/health` every hour to prevent sleep
+
+Full guide in [`HUGGINGFACE_DEPLOY.md`](./HUGGINGFACE_DEPLOY.md).
+
 ### Render (No Credit Card Needed)
 
 1. **Fork** this repository

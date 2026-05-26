@@ -50,22 +50,29 @@ class Transcriber:
     def __init__(self, api_key: str | None = None, language_hint: str | None = None):
         key = api_key or config.get_next_groq_key()
         if not key:
-            raise TranscriptionError(
-                "No Groq API key available. Provide a key or set GROQ_API_KEYS in config."
-            )
+            raise TranscriptionError("No Groq API key available.")
         from groq import Groq
         self.client = Groq(api_key=key)
         self._api_key = key
-        self._language_hint = language_hint or config.WHISPER_LANGUAGE_HINTS.get(language_hint, "arabic" if language_hint and language_hint.startswith("ar") else None)
+        self._language_hint = language_hint
 
-    def transcribe_chunks(self, chunks: list[ChunkInfo]) -> TranscriptionResult:
+    def transcribe_chunks(self, chunks: list[ChunkInfo], progress_callback: callable = None) -> TranscriptionResult:
         """Transcribe all chunks and merge into a single result."""
         all_segments: list[TranscriptionSegment] = []
         detected_lang = "en"
         lang_prob = 1.0
+        total_chunks = len(chunks)
+        next_update = 0
+        update_interval = max(1, total_chunks // 20)  # Update about 20 times total
 
         for i, chunk in enumerate(chunks):
-            logger.info("Transcribing chunk %d/%d ...", i + 1, len(chunks))
+            if i >= next_update:
+                pct = int((i / total_chunks) * 100)
+                if progress_callback:
+                    progress_callback(f"Transcribing {i+1}/{total_chunks} ({pct}%)")
+                next_update += update_interval
+            
+            logger.info("Transcribing chunk %d/%d", i + 1, total_chunks)
             try:
                 result = self._transcribe_chunk(chunk)
                 # Use language from first chunk
@@ -76,54 +83,106 @@ class Transcriber:
                 # Adjust segment timestamps to absolute positions
                 for seg in result.segments:
                     abs_start = chunk.chunk_start_ms / 1000 + seg.start
-                    abs_end = chunk.chunk_start_ms / 1000 + seg.end
+                    abs_end   = chunk.chunk_start_ms / 1000 + seg.end
 
-                    # Only include segments within the content window (skip overlap zones)
+                    # Skip segments that fall entirely inside the overlap zone.
+                    # Use a small tolerance (0.05s) so boundary segments are kept.
                     content_start = chunk.start_ms / 1000
-                    content_end = chunk.end_ms / 1000
+                    content_end   = chunk.end_ms   / 1000
+                    TOLERANCE = 0.05
 
-                    if abs_end <= content_start and chunk.has_leading_overlap:
+                    if chunk.has_leading_overlap and abs_end < content_start - TOLERANCE:
                         continue
-                    if abs_start >= content_end and chunk.has_trailing_overlap:
+                    if chunk.has_trailing_overlap and abs_start > content_end + TOLERANCE:
                         continue
 
                     all_segments.append(TranscriptionSegment(
                         text=seg.text.strip(),
                         start=abs_start,
                         end=abs_end,
-                        confidence=seg.avg_logprob + 1,  # normalise logprob
+                        confidence=seg.avg_logprob + 1,
                     ))
 
             except Exception as e:
-                logger.error("Chunk %d transcription failed: %s", i, e)
-                # Continue with remaining chunks rather than failing entirely
-                continue
+                error_msg = str(e).lower()
+                # Check for rate limit errors
+                if "rate_limit" in error_msg or "too many requests" in error_msg or "429" in error_msg:
+                    logger.warning(f"Rate limit hit on chunk {i+1}. Retrying...")
+                    if progress_callback:
+                        progress_callback(f"Rate limit. Retrying chunk {i+1}...")
+                    # Retry up to 3 times
+                    for retry in range(3):
+                        try:
+                            time.sleep(2 + retry * 2)
+                            result = self._transcribe_chunk(chunk)
+                            break
+                        except Exception as retry_e:
+                            logger.warning(f"Retry {retry+1} failed: {retry_e}")
+                            if retry == 2:
+                                logger.error(f"Chunk {i+1} failed after retries")
+                    else:
+                        continue
+                else:
+                    logger.error("Chunk %d transcription failed: %s", i, e)
+                    continue
 
             # Rate limit: Groq allows ~20 req/min on free tier
             if i < len(chunks) - 1:
-                time.sleep(0.5)
+                time.sleep(0.3)
 
         full_text = self._merge_segments(all_segments)
 
+        # Also deduplicate the segments list itself by timestamp
+        # so SRT/VTT files don't contain overlapping entries
+        all_segments_sorted = sorted(all_segments, key=lambda s: s.start)
+        deduped_segments: list[TranscriptionSegment] = []
+        last_end = -1.0
+        for seg in all_segments_sorted:
+            if seg.start < last_end - 0.1:
+                continue
+            deduped_segments.append(seg)
+            last_end = seg.end
+
         return TranscriptionResult(
-            segments=all_segments,
+            segments=deduped_segments,
             detected_language=detected_lang,
             lang_probability=lang_prob,
             full_text=full_text,
         )
 
-    def _transcribe_chunk(self, chunk: ChunkInfo) -> TranscriptionResult:
-        """Send one chunk to Groq Whisper API."""
-        with open(chunk.path, "rb") as f:
-            kwargs = {
-                "file": (chunk.path.name, f, "audio/wav"),
-                "model": config.WHISPER_MODEL,
-                "response_format": "verbose_json",
-                "temperature": 0.0,
-            }
-            if self._language_hint:
-                kwargs["language"] = self._language_hint
-            response = self.client.audio.transcriptions.create(**kwargs)
+    def _transcribe_chunk(self, chunk: ChunkInfo, max_retries: int = 3) -> TranscriptionResult:
+        """Send one chunk to Groq Whisper API with retry logic."""
+        last_error = None
+        for attempt in range(max_retries):
+            try:
+                with open(chunk.path, "rb") as f:
+                    kwargs = {
+                        "file": (chunk.path.name, f, "audio/wav"),
+                        "model": config.WHISPER_MODEL,
+                        "response_format": "verbose_json",
+                        "temperature": 0.0,
+                    }
+                    if self._language_hint:
+                        kwargs["language"] = self._language_hint
+                    response = self.client.audio.transcriptions.create(**kwargs)
+                break  # Success
+                
+            except Exception as e:
+                error_msg = str(e).lower()
+                last_error = e
+                # Check for rate limit
+                if "rate_limit" in error_msg or "429" in error_msg or "too many requests" in error_msg:
+                    if attempt < max_retries - 1:
+                        wait_time = (attempt + 1) * 3
+                        logger.warning(f"Rate limit, waiting {wait_time}s...")
+                        time.sleep(wait_time)
+                    else:
+                        raise TranscriptionError(f"Rate limit exceeded. Use your own API key.")
+                else:
+                    raise
+        
+        if last_error and attempt == max_retries - 1:
+            raise TranscriptionError(f"Failed after {max_retries} attempts: {last_error}")
 
         response_dict = dict(response) if hasattr(response, "__iter__") else {"text": str(response), "segments": [], "language": "en", "language_probability": 1.0}
 
@@ -162,15 +221,34 @@ class Transcriber:
         )
 
     def _merge_segments(self, segments: list[TranscriptionSegment]) -> str:
-        """Merge segments into clean full text, trimming overlaps."""
+        """
+        Merge transcript segments into clean full text.
+
+        Two-pass deduplication:
+        1. Timestamp-based: drop segments whose start time overlaps with the
+           previous segment's end (catches exact chunk boundary duplicates).
+        2. Text-based: sliding window comparison to catch near-duplicate phrases
+           that Whisper sometimes repeats across chunk boundaries.
+        """
         if not segments:
             return ""
 
         segments = sorted(segments, key=lambda s: s.start)
 
+        # Pass 1: Drop timestamp-overlapping segments
+        # If a segment starts before the previous one ended, it's a duplicate
+        deduped: list[TranscriptionSegment] = []
+        last_end = -1.0
+        for seg in segments:
+            if seg.start < last_end - 0.1:   # 100ms tolerance
+                continue
+            deduped.append(seg)
+            last_end = seg.end
+
+        # Pass 2: Text-level dedup with sliding window
         merged = []
         prev_text = ""
-        for seg in segments:
+        for seg in deduped:
             text = seg.text.strip()
             if not text:
                 continue
@@ -183,24 +261,46 @@ class Transcriber:
         return " ".join(merged)
 
     def _trim_overlap(self, prev: str, current: str) -> str:
-        """Trim overlapping text from current segment."""
+        """
+        Remove leading words from `current` that overlap with the tail of `prev`.
+
+        Uses both exact matching and fuzzy matching (ignoring punctuation/case)
+        to catch Whisper's mid-sentence repetitions.
+        """
         if not prev or not current:
             return current
 
-        prev_words = prev.split()
-        curr_words = current.split()
+        import re as _re
 
-        prev_tail = prev_words[-config.DEDUP_WINDOW_WORDS:]
-        curr_head = curr_words[:config.DEDUP_WINDOW_WORDS]
+        def normalize(s: str) -> str:
+            """Lowercase, strip punctuation for comparison."""
+            return _re.sub(r"[^a-z0-9\u0600-\u06ff\s]", "", s.lower()).split()
 
-        if not prev_tail or not curr_head:
-            return current
+        prev_words  = prev.split()
+        curr_words  = current.split()
+        prev_norm   = normalize(prev)
+        curr_norm   = normalize(current)
 
-        for i in range(len(curr_head), 0, -1):
-            overlap_text = " ".join(curr_head[:i]).lower()
-            prev_ending = " ".join(prev_tail[-i:]).lower()
-            if overlap_text == prev_ending:
-                return " ".join(curr_words[i:])
+        window = config.DEDUP_WINDOW_WORDS
+
+        prev_tail_norm = prev_norm[-window:]
+        curr_head_norm = curr_norm[:window]
+
+        # Try decreasing overlap lengths from max down to 3 words
+        for overlap_len in range(min(len(prev_tail_norm), len(curr_head_norm)), 2, -1):
+            if prev_tail_norm[-overlap_len:] == curr_head_norm[:overlap_len]:
+                # Skip `overlap_len` words from the start of `current`
+                # (count in original words, not normalized)
+                skipped = 0
+                orig_idx = 0
+                for orig_idx, w in enumerate(curr_words):
+                    if normalize(w):
+                        skipped += 1
+                    if skipped >= overlap_len:
+                        orig_idx += 1
+                        break
+                remainder = " ".join(curr_words[orig_idx:]).strip()
+                return remainder if remainder else ""
 
         return current
 

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AudioScribe — Offline</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #080b0f; --text: #e8edf2;
+      --text-dim: #7a8898; --green: #39ff8a;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'Syne', sans-serif;
+      min-height: 100vh; display: flex;
+      align-items: center; justify-content: center;
+      text-align: center; padding: 24px;
+    }
+    .container { max-width: 400px; }
+    .icon { font-size: 56px; margin-bottom: 24px; }
+    h1 { font-size: 28px; font-weight: 700; margin-bottom: 12px; }
+    p  { color: var(--text-dim); font-size: 15px; line-height: 1.6; margin-bottom: 28px; }
+    a  {
+      display: inline-block; padding: 12px 28px;
+      background: var(--green); color: #000;
+      font-weight: 700; font-size: 14px;
+      border-radius: 8px; text-decoration: none;
+    }
+    a:hover { opacity: 0.85; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">🎙</div>
+    <h1>You're offline</h1>
+    <p>AudioScribe needs an internet connection to transcribe and summarize audio. Please check your connection and try again.</p>
+    <a href="/" onclick="location.reload(); return false;">Try Again</a>
+  </div>
+</body>
+</html>

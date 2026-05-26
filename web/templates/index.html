@@ -4,6 +4,23 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AudioScribe — AI Audio Intelligence</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#080b0f" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="AudioScribe" />
+  <link rel="icon" type="image/x-icon" href="/static/images/favicon.ico" />
+  <link rel="icon" type="image/png" href="/static/images/logo.png" sizes="32x32" />
+  <link rel="apple-touch-icon" href="/static/images/logo.png" />
+
+  <!-- SEO -->
+  <meta name="description" content="AI-powered audio and video transcription and summarization. Upload any file or paste a YouTube, Google Drive, or Dropbox link." />
+  <meta property="og:title" content="AudioScribe — AI Audio Intelligence" />
+  <meta property="og:description" content="Transcribe and summarize audio in seconds. No GPU required." />
+  <meta property="og:type" content="website" />
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
@@ -18,13 +35,24 @@
 <nav class="nav">
   <div class="nav-inner">
     <div class="nav-logo">
-      <img src="/static/images/logo.png" alt="AudioScribe" class="nav-logo-img" />
+      <img
+        src="/static/images/logo.png"
+        alt="AudioScribe"
+        class="nav-logo-img"
+        width="32"
+        height="32"
+        onerror="this.style.display='none';"
+      />
       <span class="logo-text">AudioScribe</span>
     </div>
     <div class="nav-links">
       <a href="#features">Features</a>
       <a href="#how">How It Works</a>
       <a href="#process" class="nav-cta">Try Now</a>
+      <button class="theme-toggle" id="themeToggle" title="Toggle light/dark mode" onclick="toggleTheme()">
+        <span class="theme-icon" id="themeIcon">☀️</span>
+        <span id="themeLabel">Light</span>
+      </button>
     </div>
   </div>
 </nav>
@@ -133,45 +161,137 @@
     <div class="section-header">
       <div class="section-tag">Pipeline</div>
       <h2>How it works</h2>
+      <p class="section-sub">Seven stages from audio to insight — no GPU required.</p>
     </div>
-    <div class="pipeline">
-      <div class="pipeline-step">
-        <div class="step-num">01</div>
-        <div class="step-content">
-          <h4>Upload</h4>
-          <p>Drop your audio or video file via web or Telegram. Up to 50 MB, 60 min.</p>
+
+    <!-- Animated flow diagram -->
+    <div class="flow-diagram">
+
+      <div class="flow-input-row">
+        <div class="flow-source">
+          <span class="flow-source-icon">📁</span>
+          <span>File Upload</span>
+          <span class="flow-source-sub">MP3, MP4, WAV…</span>
+        </div>
+        <div class="flow-source-or">or</div>
+        <div class="flow-source">
+          <span class="flow-source-icon">🔗</span>
+          <span>URL</span>
+          <span class="flow-source-sub">YouTube · Drive · Dropbox</span>
         </div>
       </div>
-      <div class="pipeline-arrow">→</div>
-      <div class="pipeline-step">
-        <div class="step-num">02</div>
-        <div class="step-content">
-          <h4>Chunk</h4>
-          <p>Audio is split into overlapping 25-second segments for reliable transcription.</p>
+
+      <div class="flow-arrow-down">↓</div>
+
+      <div class="flow-steps">
+        <div class="flow-step" style="--d:0s">
+          <div class="flow-step-icon">✂️</div>
+          <div class="flow-step-body">
+            <strong>Chunk</strong>
+            <span>25s segments<br>3s overlap</span>
+          </div>
+        </div>
+        <div class="flow-connector">→</div>
+        <div class="flow-step" style="--d:.1s">
+          <div class="flow-step-icon">🎙</div>
+          <div class="flow-step-body">
+            <strong>Transcribe</strong>
+            <span>Whisper Large-v3<br>90+ languages</span>
+          </div>
+        </div>
+        <div class="flow-connector">→</div>
+        <div class="flow-step" style="--d:.2s">
+          <div class="flow-step-icon">🔗</div>
+          <div class="flow-step-body">
+            <strong>Merge</strong>
+            <span>Overlap dedup<br>sliding window</span>
+          </div>
+        </div>
+        <div class="flow-connector">→</div>
+        <div class="flow-step" style="--d:.3s">
+          <div class="flow-step-icon">🧠</div>
+          <div class="flow-step-body">
+            <strong>Summarize</strong>
+            <span>Llama 3.3 70B<br>map-reduce</span>
+          </div>
+        </div>
+        <div class="flow-connector">→</div>
+        <div class="flow-step" style="--d:.4s">
+          <div class="flow-step-icon">📦</div>
+          <div class="flow-step-body">
+            <strong>Package</strong>
+            <span>ZIP bundle<br>TXT · MD · SRT</span>
+          </div>
         </div>
       </div>
-      <div class="pipeline-arrow">→</div>
-      <div class="pipeline-step">
-        <div class="step-num">03</div>
-        <div class="step-content">
-          <h4>Transcribe</h4>
-          <p>Each chunk is sent to Groq's Whisper Large-v3 API for fast, accurate speech-to-text.</p>
-        </div>
+
+      <div class="flow-arrow-down">↓</div>
+
+      <div class="flow-output-row">
+        <div class="flow-output"><span>📄</span> Transcript</div>
+        <div class="flow-output"><span>📝</span> Summary</div>
+        <div class="flow-output"><span>🎞</span> Subtitles</div>
+        <div class="flow-output"><span>📦</span> ZIP Bundle</div>
       </div>
-      <div class="pipeline-arrow">→</div>
-      <div class="pipeline-step">
-        <div class="step-num">04</div>
-        <div class="step-content">
-          <h4>Summarize</h4>
-          <p>Llama 3.3 70B generates structured summaries in your chosen language(s).</p>
-        </div>
+
+    </div>
+
+    <!-- Stats bar -->
+    <div class="stats-bar">
+      <div class="stat-item">
+        <span class="stat-num">90+</span>
+        <span class="stat-label">Languages</span>
       </div>
-      <div class="pipeline-arrow">→</div>
-      <div class="pipeline-step">
-        <div class="step-num">05</div>
-        <div class="step-content">
-          <h4>Download</h4>
-          <p>Get your transcript, summaries, and ZIP bundle — instantly.</p>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span class="stat-num">50 MB</span>
+        <span class="stat-label">Max file size</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span class="stat-num">60 min</span>
+        <span class="stat-label">Max duration</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span class="stat-num">0</span>
+        <span class="stat-label">GPU needed</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── Developer / About ───────────────────────────────────────── -->
+<section class="developer-section" id="about">
+  <div class="container">
+    <div class="developer-card">
+      <div class="developer-avatar">
+        <img
+          src="/static/images/developer.png"
+          alt="Mohamed Abdalkader"
+          class="developer-photo"
+          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+        />
+        <span class="developer-initials" style="display:none">MA</span>
+      </div>
+      <div class="developer-info">
+        <p class="developer-tag">Built by</p>
+        <h3 class="developer-name">Mohamed Abdalkader</h3>
+        <p class="developer-bio">AI Engineer specializing in LLMs, RAG systems, NLP, and medical imaging AI. AudioScribe started as a personal tool to navigate lecture recordings during LLM post-training study — and grew from there.</p>
+        <div class="developer-links">
+          <a href="https://www.linkedin.com/in/mo-abdalkader/" target="_blank" class="dev-link dev-link--linkedin">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+            LinkedIn
+          </a>
+          <a href="https://github.com/Mo-Abdalkader" target="_blank" class="dev-link dev-link--github">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+            GitHub
+          </a>
+          <a href="https://github.com/Mo-Abdalkader/AudioScribe" target="_blank" class="dev-link dev-link--repo">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+            View Source
+          </a>
         </div>
       </div>
     </div>
@@ -188,134 +308,230 @@
     </div>
 
     <div class="process-card">
-      <!-- Drop zone -->
-      <div class="dropzone" id="dropzone">
-        <div class="dropzone-inner">
-          <div class="dropzone-icon">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-              <polyline points="17 8 12 3 7 8"/>
-              <line x1="12" y1="3" x2="12" y2="15"/>
-            </svg>
+
+      <!-- Rate limit info bar -->
+      <div id="rateLimitInfo" class="rate-limit-info"></div>
+
+      <!-- ─── STEP 1: Source ─────────────────────────────────── -->
+      <div class="settings-step">
+        <div class="settings-step-header">
+          <span class="settings-step-num">1</span>
+          <div>
+            <strong>Choose your source</strong>
+            <span class="settings-step-sub">Upload a file or paste a link</span>
           </div>
-          <p class="dropzone-text">Drop your audio or video file here</p>
-          <p class="dropzone-sub">MP3, WAV, M4A, OGG, FLAC, MP4, MKV, MOV — up to 50 MB</p>
-          <button type="button" class="btn btn--outline" id="chooseFileBtn">Choose File</button>
-          <input type="file" id="fileInput" accept=".mp3,.wav,.m4a,.ogg,.flac,.aac,.opus,.webm,.mp4,.mkv,.avi,.mov,.wmv,.flv,.m4v" hidden />
         </div>
-        <div class="dropzone-preview" id="dropzonePreview" style="display:none">
-          <div class="preview-icon">🎵</div>
-          <div class="preview-info">
-            <span class="preview-name" id="previewName">filename.mp3</span>
-            <span class="preview-size" id="previewSize">0 MB</span>
+        <div class="settings-step-body">
+
+          <!-- Drop zone -->
+          <div class="dropzone" id="dropzone">
+            <div class="dropzone-inner">
+              <div class="dropzone-icon">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+              </div>
+              <p class="dropzone-text">Drop audio or video file here</p>
+              <p class="dropzone-sub">MP3, WAV, M4A, OGG, FLAC, MP4, MKV, MOV &mdash; up to 50 MB</p>
+              <button type="button" class="btn btn--outline" id="chooseFileBtn">Choose File</button>
+              <input type="file" id="fileInput" accept=".mp3,.wav,.m4a,.ogg,.flac,.aac,.opus,.webm,.mp4,.mkv,.avi,.mov,.wmv,.flv,.m4v" hidden />
+            </div>
+            <div class="dropzone-preview" id="dropzonePreview" style="display:none">
+              <div class="preview-icon">🎵</div>
+              <div class="preview-info">
+                <span class="preview-name" id="previewName">filename.mp3</span>
+                <span class="preview-size" id="previewSize">0 MB</span>
+                <span class="preview-eta" id="previewEta"></span>
+              </div>
+              <button type="button" class="preview-remove" id="previewRemove">&#x2715;</button>
+            </div>
           </div>
-          <button type="button" class="preview-remove" id="previewRemove">✕</button>
+
+          <!-- URL input -->
+          <div class="url-input-section" id="urlInputSection">
+            <div class="url-divider"><span>or paste a link</span></div>
+            <div class="url-input-wrap">
+              <input type="url" id="urlInput" class="text-input url-input"
+                placeholder="YouTube, Google Drive, Dropbox, or direct media URL..." />
+              <button type="button" class="btn btn--outline" id="urlSubmitBtn">Process URL</button>
+            </div>
+            <p class="option-hint">
+              🎬 YouTube &nbsp;&middot;&nbsp;
+              📁 Google Drive <em>(share as Anyone with the link)</em> &nbsp;&middot;&nbsp;
+              📦 Dropbox &nbsp;&middot;&nbsp;
+              🔗 Direct URL
+            </p>
+          </div>
+
         </div>
       </div>
 
-      <!-- Options -->
-      <div class="process-options">
-        <div class="option-group">
-          <label>Source Language</label>
-          <p class="option-hint">Select the language of your audio file</p>
-          <div class="radio-group">
-            <label class="radio-item">
-              <input type="radio" name="source_lang" value="" checked />
-              <span>Auto-detect</span>
-            </label>
-            <label class="radio-item">
-              <input type="radio" name="source_lang" value="en" />
-              <span>English</span>
-            </label>
-            <label class="radio-item">
-              <input type="radio" name="source_lang" value="ar" />
-              <span>Arabic (MSA)</span>
-            </label>
-            <label class="radio-item">
-              <input type="radio" name="source_lang" value="ar-eg" />
-              <span>Egyptian (العامية)</span>
-            </label>
+      <!-- ─── STEP 2: What do you want? ─────────────────────── -->
+      <div class="settings-step">
+        <div class="settings-step-header">
+          <span class="settings-step-num">2</span>
+          <div>
+            <strong>What do you want?</strong>
+            <span class="settings-step-sub">Choose what AudioScribe should generate</span>
           </div>
         </div>
-        <div class="option-group">
-          <label>Output Language</label>
-          <div class="radio-group">
-            <label class="radio-item">
-              <input type="radio" name="lang" value="en" checked />
-              <span>English</span>
+        <div class="settings-step-body">
+          <div class="mode-cards" id="modeCards">
+            <label class="mode-card mode-card--active">
+              <input type="radio" name="mode" value="full" checked hidden />
+              <span class="mode-icon">⚡</span>
+              <strong>Full Processing</strong>
+              <span>Transcript + AI Summary + Subtitles (SRT/VTT)</span>
             </label>
-            <label class="radio-item">
-              <input type="radio" name="lang" value="ar" />
-              <span>Arabic</span>
+            <label class="mode-card">
+              <input type="radio" name="mode" value="transcript" hidden />
+              <span class="mode-icon">📄</span>
+              <strong>Transcript + Subtitles</strong>
+              <span>Text + SRT/VTT only &mdash; no AI summary, saves quota</span>
             </label>
-            <label class="radio-item">
-              <input type="radio" name="lang" value="ar-eg" />
-              <span>Egyptian</span>
+            <label class="mode-card">
+              <input type="radio" name="mode" value="subtitles" hidden />
+              <span class="mode-icon">🎞</span>
+              <strong>Subtitles Only</strong>
+              <span>SRT + VTT files only &mdash; embed into any video player</span>
             </label>
-            <label class="radio-item">
-              <input type="radio" name="lang" value="en,ar" />
-              <span>Both</span>
-            </label>
-          </div>
-        </div>
-        <div class="option-group">
-          <label>Summary Format</label>
-          <div class="radio-group">
-            <label class="radio-item">
-              <input type="radio" name="style" value="plain" />
-              <span>Plain (.txt)</span>
-            </label>
-            <label class="radio-item">
-              <input type="radio" name="style" value="md" />
-              <span>Markdown (.md)</span>
-            </label>
-            <label class="radio-item">
-              <input type="radio" name="style" value="both" checked />
-              <span>Both</span>
+            <label class="mode-card">
+              <input type="radio" name="mode" value="summary" hidden />
+              <span class="mode-icon">🧠</span>
+              <strong>Summary Only</strong>
+              <span>AI-generated summary only &mdash; fastest, lowest quota use</span>
             </label>
           </div>
-        </div>
-        <div class="option-group">
-          <label>Summary Style</label>
-          <div class="radio-group">
-            <label class="radio-item">
-              <input type="radio" name="summary_style" value="brief" />
-              <span>Brief</span>
-            </label>
-            <label class="radio-item">
-              <input type="radio" name="summary_style" value="detailed" checked />
-              <span>Detailed</span>
-            </label>
-          </div>
-        </div>
-        <div class="option-group">
-          <label>Summary Tone</label>
-          <div class="radio-group">
-            <label class="radio-item">
-              <input type="radio" name="summary_tone" value="professional" checked />
-              <span>Professional</span>
-            </label>
-            <label class="radio-item">
-              <input type="radio" name="summary_tone" value="casual" />
-              <span>Casual</span>
-            </label>
-            <label class="radio-item">
-              <input type="radio" name="summary_tone" value="technical" />
-              <span>Technical</span>
-            </label>
-          </div>
-        </div>
-        <div class="option-group">
-          <label>Your Groq API Key (Optional)</label>
-          <p class="option-hint">Leave empty to use default key. Get free key at <a href="https://console.groq.com" target="_blank">console.groq.com</a></p>
-          <input type="password" name="groq_key" class="text-input" placeholder="gsk_..." />
         </div>
       </div>
 
-      <!-- Submit -->
+      <!-- ─── STEP 3: Language ──────────────────────────────── -->
+      <div class="settings-step">
+        <div class="settings-step-header">
+          <span class="settings-step-num">3</span>
+          <div>
+            <strong>Language settings</strong>
+            <span class="settings-step-sub">Audio source language and output language</span>
+          </div>
+        </div>
+        <div class="settings-step-body lang-settings-grid">
+
+          <!-- Source language -->
+          <div class="lang-col">
+            <div class="lang-col-label">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              Audio Language
+            </div>
+            <p class="lang-col-hint">What language is spoken in the file? Leave on Auto for best results.</p>
+            <div class="radio-group radio-group--compact">
+              <label class="radio-item"><input type="radio" name="source_lang" value="" checked /><span>🔍 Auto-detect</span></label>
+              <label class="radio-item"><input type="radio" name="source_lang" value="en" /><span>🇬🇧 English</span></label>
+              <label class="radio-item"><input type="radio" name="source_lang" value="ar" /><span>🇸🇦 Arabic</span></label>
+              <label class="radio-item"><input type="radio" name="source_lang" value="ar-eg" /><span>🇪🇬 Egyptian</span></label>
+            </div>
+          </div>
+
+          <!-- Summary output language -->
+          <div class="lang-col" id="outputLangGroup">
+            <div class="lang-col-label">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+              Summary Language
+            </div>
+            <p class="lang-col-hint">Language for the AI summary &mdash; can differ from the audio.</p>
+            <div class="radio-group radio-group--compact">
+              <label class="radio-item"><input type="radio" name="lang" value="en" checked /><span>🇬🇧 English</span></label>
+              <label class="radio-item"><input type="radio" name="lang" value="ar" /><span>🇸🇦 Arabic</span></label>
+              <label class="radio-item"><input type="radio" name="lang" value="ar-eg" /><span>🇪🇬 Egyptian</span></label>
+              <label class="radio-item"><input type="radio" name="lang" value="en,ar" /><span>🌐 Both</span></label>
+            </div>
+          </div>
+
+          <!-- Translated subtitles -->
+          <div class="lang-col" id="subtitleLangGroup">
+            <div class="lang-col-label">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 15h4M7 11h10"/></svg>
+              Translated Subtitles
+              <span class="option-badge">optional</span>
+            </div>
+            <p class="lang-col-hint">Generate an extra SRT/VTT in a different language &mdash; great for watching locally.</p>
+            <div class="radio-group radio-group--compact">
+              <label class="radio-item"><input type="radio" name="subtitle_lang_mode" value="none" checked /><span>None</span></label>
+              <label class="radio-item"><input type="radio" name="subtitle_lang_mode" value="en" /><span>🇬🇧 English</span></label>
+              <label class="radio-item"><input type="radio" name="subtitle_lang_mode" value="ar" /><span>🇸🇦 Arabic</span></label>
+              <label class="radio-item"><input type="radio" name="subtitle_lang_mode" value="ar-eg" /><span>🇪🇬 Egyptian</span></label>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ─── STEP 4: Summary Options ───────────────────────── -->
+      <div class="settings-step" id="summaryOptionsStep">
+        <div class="settings-step-header">
+          <span class="settings-step-num">4</span>
+          <div>
+            <strong>Summary options</strong>
+            <span class="settings-step-sub">Customize how the AI writes the summary</span>
+          </div>
+        </div>
+        <div class="settings-step-body summary-opts-grid">
+
+          <div class="sopt-col" id="summaryDetailGroup">
+            <div class="sopt-label">Detail level</div>
+            <div class="radio-group radio-group--compact">
+              <label class="radio-item"><input type="radio" name="summary_style" value="brief" /><span>⚡ Brief &mdash; key points only</span></label>
+              <label class="radio-item"><input type="radio" name="summary_style" value="detailed" checked /><span>📝 Detailed &mdash; full breakdown</span></label>
+            </div>
+          </div>
+
+          <div class="sopt-col">
+            <div class="sopt-label">Tone</div>
+            <div class="radio-group radio-group--compact">
+              <label class="radio-item"><input type="radio" name="summary_tone" value="professional" checked /><span>💼 Professional</span></label>
+              <label class="radio-item"><input type="radio" name="summary_tone" value="casual" /><span>😊 Casual</span></label>
+              <label class="radio-item"><input type="radio" name="summary_tone" value="technical" /><span>🔬 Technical</span></label>
+            </div>
+          </div>
+
+          <div class="sopt-col">
+            <div class="sopt-label">File format</div>
+            <div class="radio-group radio-group--compact">
+              <label class="radio-item"><input type="radio" name="style" value="plain" /><span>Plain .txt</span></label>
+              <label class="radio-item"><input type="radio" name="style" value="md" /><span>Markdown .md</span></label>
+              <label class="radio-item"><input type="radio" name="style" value="both" checked /><span>Both formats</span></label>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ─── STEP 5: API Key ───────────────────────────────── -->
+      <div class="settings-step settings-step--subtle">
+        <div class="settings-step-header">
+          <span class="settings-step-num settings-step-num--opt">5</span>
+          <div>
+            <strong>Your API Key <span class="option-badge">optional</span></strong>
+            <span class="settings-step-sub">Use your own key to bypass shared limits</span>
+          </div>
+        </div>
+        <div class="settings-step-body">
+          <p class="option-hint" style="margin-bottom:10px">
+            Leave empty to use the shared key (subject to rate limits).
+            Get a free key at <a href="https://console.groq.com" target="_blank">console.groq.com</a>
+            &mdash; 100K tokens/day free.
+          </p>
+          <input type="password" name="groq_key" id="groqKeyInput"
+            class="text-input" placeholder="gsk_..." autocomplete="off" />
+        </div>
+      </div>
+
+      <!-- ─── Submit Button ─────────────────────────────────── -->
       <button class="btn btn--primary btn--full" id="processBtn" disabled>
-        <span id="processBtnLabel">Select a file to begin</span>
+        <span id="processBtnLabel">Select a file or paste a URL above</span>
       </button>
+
     </div>
 
     <!-- Progress & Results -->
@@ -346,6 +562,28 @@
           <div class="transcript-text" id="transcriptText"></div>
         </div>
         <div class="download-list" id="downloadList"></div>
+        <div class="export-actions" id="exportActions" style="display:none">
+          <p class="export-label">Export to</p>
+          <div class="export-buttons">
+            <button class="btn btn--outline btn--sm export-btn" id="notionExportBtn" onclick="exportToNotion()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M4.459 4.208c.746.606 1.026.56 2.428.466l13.215-.793c.28 0 .047-.28-.046-.326L17.86 1.968c-.42-.326-.981-.7-2.055-.607L3.01 2.295c-.466.046-.56.28-.374.466zm.793 3.08v13.904c0 .747.373 1.027 1.214.98l14.523-.84c.841-.046.935-.56.935-1.167V6.354c0-.606-.233-.933-.748-.887l-15.177.887c-.56.047-.747.327-.747.933zm14.337.745c.093.42 0 .84-.42.888l-.7.14v10.264c-.608.327-1.168.514-1.635.514-.748 0-.935-.234-1.495-.933l-4.577-7.186v6.952L12.21 19s0 .84-1.168.84l-3.222.186c-.093-.186 0-.653.327-.746l.84-.233V9.854L7.822 9.76c-.094-.42.14-1.026.793-1.073l3.456-.233 4.764 7.279v-6.44l-1.215-.139c-.093-.514.234-.887.748-.933zM1.936 1.035l13.31-.98c1.634-.14 2.055-.047 3.082.7l4.249 2.986c.7.513.934.653.934 1.213v16.378c0 1.026-.373 1.634-1.68 1.726l-15.458.934c-.98.047-1.448-.093-1.962-.747l-3.129-4.06c-.56-.747-.793-1.306-.793-1.96V2.667c0-.839.374-1.54 1.447-1.632z"/></svg>
+              Notion
+            </button>
+            <button class="btn btn--outline btn--sm export-btn" id="copyMdBtn" onclick="copyMarkdown()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy Markdown
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Session History -->
+      <div class="history-panel" id="historyPanel" style="display:none">
+        <div class="history-header">
+          <span>🕓 This session</span>
+          <button class="btn btn--ghost btn--xs" onclick="clearHistory()">Clear</button>
+        </div>
+        <div class="history-list" id="historyList"></div>
       </div>
 
       <!-- Error -->
@@ -385,7 +623,7 @@
   <div class="container">
     <div class="footer-inner">
       <div class="footer-brand">
-        <img src="/static/images/logo.png" alt="AudioScribe" class="footer-logo-img" />
+        <img src="/static/images/logo.png" alt="AudioScribe" class="footer-logo-img" width="24" height="24" onerror="this.style.display='none';" />
         <span>AudioScribe</span>
       </div>
       <div class="footer-author">
@@ -398,13 +636,12 @@
       </div>
       <div class="footer-tech">
         <p class="footer-tech-label">Powered by</p>
-        <div class="tech-stack">
-          <span>Groq</span>
-          <span>Whisper</span>
-          <span>Llama 3.3</span>
-          <span>FastAPI</span>
-          <span>Railway</span>
-        </div>
+<div class="tech-stack">
+            <span>Groq</span>
+            <span>Whisper</span>
+            <span>Llama 3.3</span>
+            <span>FastAPI</span>
+          </div>
       </div>
     </div>
     <div class="footer-bottom">

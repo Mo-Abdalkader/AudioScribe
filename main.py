@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-main.py — AudioScribe entry point for Railway.
+main.py — AudioScribe entry point.
 Starts the FastAPI web server (which also manages the Telegram bot).
 """
 import logging

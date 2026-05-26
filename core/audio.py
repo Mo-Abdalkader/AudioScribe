@@ -53,10 +53,12 @@ class AudioValidationError(Exception):
 
 
 class AudioHandler:
-    def __init__(self, job_id: Optional[str] = None):
+    def __init__(self, job_id: Optional[str] = None, max_size_mb: Optional[int] = None, max_duration_min: Optional[int] = None):
         self.job_id = job_id or str(uuid.uuid4())[:8]
         self.temp_dir = config.OUTPUT_TEMP_DIR / self.job_id
         self.temp_dir.mkdir(parents=True, exist_ok=True)
+        self.max_size_mb = max_size_mb or config.MAX_FILE_SIZE_MB
+        self.max_duration_min = max_duration_min or config.MAX_AUDIO_DURATION_MINUTES
         self._created_files: list[Path] = []
 
     def __enter__(self):
@@ -83,19 +85,19 @@ class AudioHandler:
 
         size_bytes = path.stat().st_size
         size_mb = size_bytes / (1024 * 1024)
-        if size_mb > config.MAX_FILE_SIZE_MB:
+        if size_mb > self.max_size_mb:
             raise AudioValidationError(
-                f"File too large: {size_mb:.1f} MB. Maximum: {config.MAX_FILE_SIZE_MB} MB"
+                f"File too large: {size_mb:.1f} MB. Maximum: {self.max_size_mb} MB"
             )
 
         file_type = "video" if extension in config.VIDEO_EXTENSIONS else "audio"
         duration_ms = self._get_duration_ms(path)
         duration_seconds = duration_ms / 1000
 
-        if duration_seconds / 60 > config.MAX_AUDIO_DURATION_MINUTES:
+        if duration_seconds / 60 > self.max_duration_min:
             raise AudioValidationError(
                 f"Audio too long: {duration_seconds/60:.1f} min. "
-                f"Maximum: {config.MAX_AUDIO_DURATION_MINUTES} min"
+                f"Maximum: {self.max_duration_min} min"
             )
 
         return AudioFileInfo(
@@ -210,4 +212,5 @@ class AudioHandler:
         info = self.load(input_path)
         audio_path = self.extract_audio(info) if info.file_type == "video" else info.path
         chunks = self.chunk(audio_path)
+        logger.info(f"Audio split into {len(chunks)} chunks")
         return info, chunks

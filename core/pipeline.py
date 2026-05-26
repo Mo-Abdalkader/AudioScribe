@@ -54,6 +54,8 @@ class Pipeline:
         progress_cb: Optional[Callable[[str], None]] = None,
         groq_key: Optional[str] = None,
         cohere_key: Optional[str] = None,
+        summary_style: str = "detailed",
+        summary_tone: str = "professional",
     ) -> PipelineResult:
         """
         Run the full pipeline on an input file.
@@ -66,6 +68,8 @@ class Pipeline:
             progress_cb: Optional callback(message) for progress updates.
             groq_key: User's own Groq API key (optional).
             cohere_key: User's own Cohere API key (optional).
+            summary_style: "brief" or "detailed".
+            summary_tone: "professional", "casual", or "technical".
 
         Returns:
             PipelineResult with all outputs.
@@ -144,12 +148,32 @@ class Pipeline:
         cohere_key: Optional[str] = None,
         summary_style: str = "detailed",
         summary_tone: str = "professional",
-    ) -> tuple[TranscriptionResult, SummaryResult, dict[str, bytes]]:
+        max_size_mb: Optional[int] = None,
+        max_duration_min: Optional[int] = None,
+        mode: str = "full",
+        subtitle_langs: list[str] = None,
+    ) -> tuple[TranscriptionResult, "SummaryResult | None", dict[str, bytes]]:
         """
         Like run() but returns output files as in-memory bytes (for web API).
+
+        Args:
+            mode: Processing mode —
+                "full"        → transcript + summary + subtitles (default)
+                "transcript"  → transcript + subtitles only, no summarization
+                "subtitles"   → SRT/VTT only
+                "summary"     → summary only (transcript discarded from output)
+            subtitle_langs: Extra languages to generate translated SRT for.
+                            e.g. ["en"] when audio is Arabic — produces Arabic + English SRT.
+                            None = original language only.
         """
         if target_langs is None:
             target_langs = ["en"]
+        if subtitle_langs is None:
+            subtitle_langs = []
+
+        do_summary   = mode in ("full", "summary")
+        do_transcript_file = mode in ("full", "transcript")
+        do_subtitles = mode in ("full", "transcript", "subtitles")
 
         job_id = job_id or str(uuid.uuid4())[:12]
         base_name = base_name or input_path.stem
@@ -159,29 +183,60 @@ class Pipeline:
             if progress_cb:
                 progress_cb(msg)
 
-        handler = AudioHandler(job_id=job_id)
+        handler = AudioHandler(job_id=job_id, max_size_mb=max_size_mb, max_duration_min=max_duration_min)
         try:
-            _progress("Validating and chunking audio...")
+            _progress("Processing audio file...")
             try:
                 file_info, chunks = handler.prepare(input_path)
             except AudioValidationError as e:
                 raise PipelineError(str(e))
+            except Exception as e:
+                logger.error(f"Audio validation failed: {e}")
+                raise PipelineError(f"Audio file error: {e}")
 
-            _progress(f"Split into {len(chunks)} chunk(s). Transcribing...")
-            transcript = self.transcriber.transcribe_chunks(chunks)
-            _progress(f"Transcribed. Detected: {transcript.language_name}. Summarizing...")
+            _progress(f"Split into {len(chunks)} chunks. Transcribing...")
+            transcript = self.transcriber.transcribe_chunks(chunks, progress_cb)
+            _progress(f"Transcribed ({transcript.language_name}).")
 
-            summary = self.summarizer.summarize(
-                transcript.full_text,
-                target_langs=target_langs,
-                groq_key=groq_key,
-                cohere_key=cohere_key,
-                style=summary_style,
-                tone=summary_tone,
-            )
+            # ── Summarization (skipped in transcript/subtitles modes) ──────────
+            summary = None
+            if do_summary:
+                lang_display = " + ".join(config.LANG_NAMES.get(l, l.upper()) for l in target_langs)
+                _progress(f"Summarizing in {lang_display}...")
+                summary = self.summarizer.summarize(
+                    transcript.full_text,
+                    target_langs=target_langs,
+                    groq_key=groq_key,
+                    cohere_key=cohere_key,
+                    style=summary_style,
+                    tone=summary_tone,
+                )
+
+            # ── Translated subtitles (optional) ────────────────────────────────
+            translated_srt: dict[str, str] = {}
+            if do_subtitles and subtitle_langs:
+                for lang in subtitle_langs:
+                    _progress(f"Translating subtitles to {config.LANG_NAMES.get(lang, lang.upper())}...")
+                    try:
+                        translated_srt[lang] = self.summarizer.translate_segments(
+                            transcript.segments,
+                            target_lang=lang,
+                            groq_key=groq_key,
+                            cohere_key=cohere_key,
+                        )
+                    except Exception as e:
+                        logger.warning("Subtitle translation failed for %s: %s", lang, e)
+
             _progress("Packaging...")
-
-            files = self.output_mgr.write_to_memory(job_id, base_name, transcript, summary)
+            from core.summarizer import SummaryResult
+            files = self.output_mgr.write_to_memory(
+                job_id, base_name, transcript,
+                summary or SummaryResult(summaries={}),
+                include_transcript=do_transcript_file,
+                include_subtitles=do_subtitles,
+                include_summary=do_summary,
+                translated_srt=translated_srt,
+            )
             _progress("Done!")
             return transcript, summary, files
 

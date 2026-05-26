@@ -157,9 +157,25 @@ class Summarizer:
                         )
                         return resp.generations[0].text.strip()
             except Exception as e:
+                err_str = str(e)
+                # Parse retry-after from Groq 429 response
+                wait_minutes = None
+                import re as _re
+                m = _re.search(r'try again in (\d+)m(\d+)', err_str, _re.IGNORECASE)
+                if m:
+                    wait_minutes = int(m.group(1)) + 1  # round up
+                elif _re.search(r'429|rate.limit|too many requests', err_str, _re.IGNORECASE):
+                    wait_minutes = 30  # safe fallback
+
+                if wait_minutes:
+                    raise SummarizerError(
+                        f"RATE_LIMIT:{wait_minutes}"   # structured — caught upstream
+                    )
+
                 delay = config.PROVIDER_RETRY_BASE_DELAY * (2 ** attempt)
                 logger.warning("LLM call failed (attempt %d): %s. Retrying in %.1fs", attempt + 1, e, delay)
                 time.sleep(delay)
+
         raise SummarizerError("All LLM retry attempts failed")
 
     def _direct_prompt(self, text: str, lang: str) -> str:
@@ -281,3 +297,85 @@ Use clear ## headers and bullet points.
 {combined}
 
 Final Structured Summary:"""
+
+    def translate_segments(
+        self,
+        segments: list,
+        target_lang: str,
+        groq_key: Optional[str] = None,
+        cohere_key: Optional[str] = None,
+    ) -> str:
+        """
+        Translate transcript segments into target_lang and return a valid SRT string.
+
+        Strategy: batch segments into groups of ~50 to stay within token limits,
+        send each batch as a numbered list to the LLM, parse back translated lines,
+        then reassemble into SRT with original timestamps.
+        """
+        client, provider = self._get_client(groq_key, cohere_key)
+        lang_name = config.LANG_NAMES.get(target_lang, target_lang.upper())
+        is_rtl = target_lang in ("ar", "ar-eg")
+
+        BATCH = 50   # segments per LLM call
+        translated_texts: list[str] = [""] * len(segments)
+
+        for batch_start in range(0, len(segments), BATCH):
+            batch = segments[batch_start: batch_start + BATCH]
+
+            # Build numbered list for LLM
+            numbered = "\n".join(
+                f"{i+1}. {seg.text.strip()}"
+                for i, seg in enumerate(batch)
+            )
+
+            prompt = (
+                f"Translate each numbered line below into {lang_name}. "
+                f"Return ONLY the translated lines, keeping the same numbers and format. "
+                f"Do NOT merge, split, skip, or reorder lines.\n\n"
+                f"{numbered}"
+            )
+
+            try:
+                raw = self._call_llm(client, provider, prompt, max_tokens=2048)
+            except SummarizerError as e:
+                # Propagate RATE_LIMIT errors, skip others
+                if "RATE_LIMIT:" in str(e):
+                    raise
+                logger.warning("Subtitle translation batch failed: %s", e)
+                # Fall back: use original text for this batch
+                for i, seg in enumerate(batch):
+                    translated_texts[batch_start + i] = seg.text.strip()
+                continue
+
+            # Parse "N. translated text" lines
+            import re as _re
+            parsed: dict[int, str] = {}
+            for line in raw.strip().splitlines():
+                m = _re.match(r'^(\d+)\.\s*(.*)', line.strip())
+                if m:
+                    parsed[int(m.group(1))] = m.group(2).strip()
+
+            for i, seg in enumerate(batch):
+                idx = i + 1
+                translated_texts[batch_start + i] = parsed.get(idx, seg.text.strip())
+
+        # Build SRT from original timestamps + translated text
+        srt_lines: list[str] = []
+        for i, seg in enumerate(segments):
+            srt_lines.append(str(i + 1))
+            srt_lines.append(
+                f"{self._srt_time(seg.start)} --> {self._srt_time(seg.end)}"
+            )
+            srt_lines.append(translated_texts[i])
+            srt_lines.append("")
+
+        return "\n".join(srt_lines)
+
+    @staticmethod
+    def _srt_time(seconds: float) -> str:
+        """Convert float seconds to SRT timestamp HH:MM:SS,mmm"""
+        h = int(seconds // 3600)
+        m = int((seconds % 3600) // 60)
+        s = int(seconds % 60)
+        ms = int((seconds % 1) * 1000)
+        return f"{h:02d}:{m:02d}:{s:02d},{ms:03d}"

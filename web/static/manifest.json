@@ -1,0 +1,35 @@
+{
+  "name": "AudioScribe",
+  "short_name": "AudioScribe",
+  "description": "AI-powered audio & video transcription and summarization",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#080b0f",
+  "theme_color": "#080b0f",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/static/images/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/images/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "utilities"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Transcribe File",
+      "short_name": "Transcribe",
+      "description": "Upload an audio or video file",
+      "url": "/#process",
+      "icons": [{ "src": "/static/images/logo.png", "sizes": "192x192" }]
+    }
+  ]
+}

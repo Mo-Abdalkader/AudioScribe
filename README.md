@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🎙 AudioScribe
+# <img src="web/static/images/logo.png" width="36" height="36" alt="" style="vertical-align: -6px; border-radius: 6px;"> AudioScribe
 
 **AI-powered audio & video transcription and summarization — no GPU required.**
 

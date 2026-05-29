@@ -15,11 +15,11 @@
 
 ### 🌐 Live App
 
-**Try it now:** [@Live Demo](https://audioscribe-production.up.railway.app/)
+**Try it now:** https://audioscribe-production.up.railway.app/
 
 ### 🤖 Telegram Bot
 
-**Open in Telegram:** [@video_audio_summary_bot](https://t.me/video_audio_summary_bot) *(will be back online after redeploy)*
+**Open in Telegram:** [@video_audio_summary_bot](https://t.me/video_audio_summary_bot) 
 
 Send any audio/video file or paste a YouTube/Google Drive/Dropbox link — get a full transcript, intelligent summary, and subtitle files (SRT/VTT) in a ZIP bundle.
 

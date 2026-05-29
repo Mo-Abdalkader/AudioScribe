@@ -36,6 +36,7 @@ def _prefs(user_id: int) -> dict:
             "summary_style": "detailed",
             "summary_tone": "professional",
             "groq_key": None,
+            "fast_mode": False,
             "mode": "full",          # full / transcript / subtitles / summary
             "subtitle_lang": "none", # none / en / ar / ar-eg
         }
@@ -283,6 +284,7 @@ async def cmd_settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
     mode_labels  = {"full": "Full ⚡", "transcript": "Transcript 📄", "subtitles": "Subtitles 🎞", "summary": "Summary 🧠"}
     sub_labels   = {"none": "Original only 🔤", "en": "+English 🇬🇧", "ar": "+Arabic 🇸🇦", "ar-eg": "+Egyptian 🇪🇬"}
     has_key      = "✅ Set" if p.get("groq_key") else "❌ Not set"
+    fast_status  = "⚡ On" if p.get("fast_mode") else "🐢 Off"
 
     keyboard = [
         [InlineKeyboardButton(f"⚡ Mode: {mode_labels.get(p['mode'], p['mode'])}",        callback_data="open:mode")],
@@ -291,6 +293,7 @@ async def cmd_settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton(f"📄 Format: {style_labels.get(p['style'], p['style'])}",    callback_data="open:style")],
         [InlineKeyboardButton(f"📝 Detail: {p['summary_style'].title()}",                  callback_data="open:summary_style")],
         [InlineKeyboardButton(f"🎭 Tone: {p['summary_tone'].title()}",                     callback_data="open:summary_tone")],
+        [InlineKeyboardButton(f"⚡ Fast Mode: {fast_status}",                              callback_data="open:fast_mode")],
         [InlineKeyboardButton(f"🔑 API Key: {has_key}",                                    callback_data="open:key")],
     ]
     await update.effective_message.reply_text(
@@ -337,6 +340,26 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.message.reply_text(
                 "🔑 Send your Groq key with: `/key gsk_...`\n"
                 "Or clear it with: `/key clear`",
+                parse_mode=ParseMode.MARKDOWN,
+            )
+        elif value == "fast_mode":
+            if not _prefs(user_id).get("groq_key"):
+                await query.message.reply_text(
+                    "🔑 Set your own API key first with `/key` to use fast mode.\n\n"
+                    "Fast Mode reduces delays between API calls for quicker processing, "
+                    "but requires your own key since the shared key has tight rate limits.",
+                    parse_mode=ParseMode.MARKDOWN,
+                )
+                return
+            current = _prefs(user_id).get("fast_mode", False)
+            _prefs(user_id)["fast_mode"] = not current
+            status = "enabled ⚡" if not current else "disabled 🐢"
+            await query.message.reply_text(
+                f"⚡ Fast Mode *{status}*.\n\n"
+                + ("Delays between API calls are reduced. Processing will be faster.\n"
+                   "⚠️ If you hit rate limit errors, disable this."
+                   if not current
+                   else "Delays restored. Safer for limited API quotas."),
                 parse_mode=ParseMode.MARKDOWN,
             )
         return
@@ -397,7 +420,31 @@ async def cmd_key(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await _reply(update, "❌ Invalid key format. Keys start with `gsk_`")
         return
     _prefs(user_id)["groq_key"] = key
-    await _reply(update, "✅ API key saved! It will be used for your transcriptions.")
+    await _reply(
+        update,
+        "✅ API key saved! It will be used for your transcriptions.\n\n"
+        "⚡ *Fast Mode available* — reduces delays for quicker processing.\n"
+        "Send `/fastmode` to enable it.\n\n"
+        "⚠️ Free keys have TPM/RPM limits. If you hit errors, disable with `/fastmode`."
+    )
+
+
+async def cmd_fastmode(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    if not _prefs(user_id).get("groq_key"):
+        await _reply(update, "❌ Set your own API key first with `/key` to use fast mode.")
+        return
+    current = _prefs(user_id).get("fast_mode", False)
+    _prefs(user_id)["fast_mode"] = not current
+    status = "enabled ⚡" if not current else "disabled 🐢"
+    await _reply(
+        update,
+        f"⚡ Fast Mode *{status}*.\n\n"
+        + ("Delays between API calls are reduced. Processing will be faster.\n"
+           "⚠️ If you hit rate limit errors, disable this."
+           if not current
+           else "Delays restored. Safer for limited API quotas.")
+    )
 
 
 async def cmd_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -540,6 +587,11 @@ async def _download_youtube(url: str, status_msg: Message, max_size_mb: int) -> 
             [
                 "yt-dlp",
                 "--no-playlist",
+                "--age-limit", "99",
+                "--geo-bypass",
+                "--extractor-args", "youtube:player_client=android,web",
+                "--extractor-retries", "3",
+                "--retries", "3",
                 "-f", "bestaudio/best",          # audio-only, best quality
                 "--extract-audio",
                 "--audio-format", "m4a",
@@ -552,14 +604,7 @@ async def _download_youtube(url: str, status_msg: Message, max_size_mb: int) -> 
         )
 
         if dl_result.returncode != 0:
-            stderr = dl_result.stderr.lower()
-            if "video unavailable" in stderr or "private" in stderr:
-                return None, "❌ YouTube video is private or unavailable."
-            if "age" in stderr:
-                return None, "❌ Age-restricted YouTube video — cannot download."
-            if "too large" in stderr or "filesize" in stderr:
-                return None, f"❌ YouTube audio exceeds size limit ({max_size_mb} MB)."
-            return None, f"❌ yt-dlp error: {dl_result.stderr[:200]}"
+            return None, f"❌ yt-dlp failed: {dl_result.stderr[:400]}"
 
         # Find the downloaded file (extension may vary)
         import glob
@@ -853,10 +898,11 @@ async def _run_pipeline_from_url(
 
         await _edit(status_msg, "🎙 Transcribing with Whisper AI...")
 
-        pipeline = Pipeline()
+        user_key = prefs.get("groq_key")
+        fast_mode = bool(user_key and prefs.get("fast_mode"))
+        pipeline = Pipeline(fast_mode=fast_mode)
         summary_style = prefs.get("summary_style", "detailed")
         summary_tone  = prefs.get("summary_tone", "professional")
-        user_key      = prefs.get("groq_key")
         mode          = prefs.get("mode", "full")
         subtitle_lang = prefs.get("subtitle_lang", "none")
         subtitle_langs = [] if subtitle_lang == "none" else [subtitle_lang]
@@ -1152,7 +1198,8 @@ async def _run_pipeline(
                 lambda: asyncio.ensure_future(progress(msg), loop=_loop)
             )
 
-        pipeline = Pipeline()
+        fast_mode = bool(user_key and prefs.get("fast_mode"))
+        pipeline = Pipeline(fast_mode=fast_mode)
         transcript, summary, files = await asyncio.to_thread(
             pipeline.run_in_memory,
             tmp_path,

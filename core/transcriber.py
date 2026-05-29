@@ -47,7 +47,7 @@ class Transcriber:
     Handles chunked audio, deduplicates overlaps, merges results.
     """
 
-    def __init__(self, api_key: str | None = None, language_hint: str | None = None):
+    def __init__(self, api_key: str | None = None, language_hint: str | None = None, fast_mode: bool = False):
         key = api_key or config.get_next_groq_key()
         if not key:
             raise TranscriptionError("No Groq API key available.")
@@ -55,6 +55,7 @@ class Transcriber:
         self.client = Groq(api_key=key)
         self._api_key = key
         self._language_hint = language_hint
+        self.fast_mode = fast_mode
 
     def transcribe_chunks(self, chunks: list[ChunkInfo], progress_callback: callable = None) -> TranscriptionResult:
         """Transcribe all chunks and merge into a single result."""
@@ -113,7 +114,7 @@ class Transcriber:
                     # Retry up to 3 times
                     for retry in range(3):
                         try:
-                            time.sleep(2 + retry * 2)
+                            time.sleep((1 if self.fast_mode else 2) + retry * 2)
                             result = self._transcribe_chunk(chunk)
                             break
                         except Exception as retry_e:
@@ -127,7 +128,7 @@ class Transcriber:
                     continue
 
             # Rate limit: Groq allows ~20 req/min on free tier
-            if i < len(chunks) - 1:
+            if not self.fast_mode and i < len(chunks) - 1:
                 time.sleep(0.3)
 
         full_text = self._merge_segments(all_segments)
@@ -173,7 +174,7 @@ class Transcriber:
                 # Check for rate limit
                 if "rate_limit" in error_msg or "429" in error_msg or "too many requests" in error_msg:
                     if attempt < max_retries - 1:
-                        wait_time = (attempt + 1) * 3
+                        wait_time = (attempt + 1) * (1 if self.fast_mode else 3)
                         logger.warning(f"Rate limit, waiting {wait_time}s...")
                         time.sleep(wait_time)
                     else:

@@ -507,7 +507,7 @@
         </div>
       </div>
 
-      <!-- ─── STEP 5: API Key ───────────────────────────────── -->
+      <!-- ─── STEP 5: API Key + Fast Mode ──────────────────── -->
       <div class="settings-step settings-step--subtle">
         <div class="settings-step-header">
           <span class="settings-step-num settings-step-num--opt">5</span>
@@ -524,6 +524,15 @@
           </p>
           <input type="password" name="groq_key" id="groqKeyInput"
             class="text-input" placeholder="gsk_..." autocomplete="off" />
+          <div id="fastModeGroup" style="margin-top:12px;">
+            <label class="radio-item" style="display:inline-flex; opacity:0.5; transition:opacity 0.2s;" id="fastModeLabel">
+              <input type="checkbox" id="fastModeCheck" disabled />
+              <span>⚡ <strong>Fast Mode</strong> &mdash; Reduce delays between API calls for faster processing</span>
+            </label>
+            <p class="option-hint-sm" style="margin-top:6px;" id="fastModeHint">
+              🔑 Enter your API key above to enable Fast Mode &mdash; reduces delays for quicker processing.
+            </p>
+          </div>
         </div>
       </div>
 

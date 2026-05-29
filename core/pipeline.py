@@ -39,10 +39,11 @@ class Pipeline:
     Accepts a file path, produces transcript + summaries + ZIP bundle.
     """
 
-    def __init__(self, source_lang: str | None = None):
+    def __init__(self, source_lang: str | None = None, fast_mode: bool = False):
         self.source_lang = source_lang
-        self.transcriber = Transcriber(language_hint=source_lang)
-        self.summarizer = Summarizer()
+        self.fast_mode = fast_mode
+        self.transcriber = Transcriber(language_hint=source_lang, fast_mode=fast_mode)
+        self.summarizer = Summarizer(fast_mode=fast_mode)
         self.output_mgr = OutputManager()
 
     def run(

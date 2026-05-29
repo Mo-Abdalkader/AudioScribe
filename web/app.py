@@ -413,6 +413,7 @@ async def process_audio(
     cohere_key: str = Form(default=""),
     mode: str = Form(default="full"),
     subtitle_langs: str = Form(default=""),
+    fast_mode: bool = Form(default=False),
 ):
     """
     Upload an audio/video file for processing.
@@ -469,6 +470,7 @@ async def process_audio(
         cohere_key=cohere_key or None,
         mode=mode,
         subtitle_langs=[l.strip() for l in subtitle_langs.split(",") if l.strip()],
+        fast_mode=fast_mode,
     )
 
     return {"job_id": job_id, "status": "processing"}
@@ -488,6 +490,7 @@ async def process_audio_url(
     cohere_key: str = Form(default=""),
     mode: str = Form(default="full"),
     subtitle_langs: str = Form(default=""),
+    fast_mode: bool = Form(default=False),
 ):
     ip = _get_client_ip(request)
     allowed, retry_after = _check_rate_limit(ip)
@@ -563,6 +566,7 @@ async def process_audio_url(
         cohere_key=cohere_key or None,
         mode=mode,
         subtitle_langs=[l.strip() for l in subtitle_langs.split(",") if l.strip()],
+        fast_mode=fast_mode,
     )
     return {"job_id": job_id, "status": "processing"}
 
@@ -580,6 +584,7 @@ async def _run_pipeline_background(
     cohere_key: Optional[str] = None,
     mode: str = "full",
     subtitle_langs: list[str] = None,
+    fast_mode: bool = False,
 ):
     """Run the pipeline in background and store results in _jobs."""
     job = _job(job_id)
@@ -593,7 +598,7 @@ async def _run_pipeline_background(
     try:
         from core.pipeline import Pipeline, PipelineError
 
-        pipeline = Pipeline(source_lang=source_lang or None)
+        pipeline = Pipeline(source_lang=source_lang or None, fast_mode=fast_mode)
         transcript, summary, files = await asyncio.to_thread(
             pipeline.run_in_memory,
             tmp_path,
@@ -671,6 +676,7 @@ async def _run_url_pipeline_background(
     cohere_key: Optional[str] = None,
     mode: str = "full",
     subtitle_langs: list[str] = None,
+    fast_mode: bool = False,
 ):
     """Download from URL then run the pipeline — used by /api/process-url."""
     import httpx as _httpx
@@ -712,6 +718,11 @@ async def _run_url_pipeline_background(
             dl_result = subprocess.run(
                 [
                     "yt-dlp", "--no-playlist",
+                    "--age-limit", "99",
+                    "--geo-bypass",
+                    "--extractor-args", "youtube:player_client=android,web",
+                    "--extractor-retries", "3",
+                    "--retries", "3",
                     "-f", "bestaudio/best",
                     "--extract-audio", "--audio-format", "m4a",
                     "--audio-quality", "0",
@@ -723,15 +734,9 @@ async def _run_url_pipeline_background(
             )
             if dl_result.returncode != 0:
                 stderr = dl_result.stderr.lower()
-                if "private" in stderr or "unavailable" in stderr:
-                    job["status"] = "error"
-                    job["error"] = "YouTube video is private or unavailable."
-                elif "age" in stderr:
-                    job["status"] = "error"
-                    job["error"] = "Age-restricted YouTube video — cannot download."
-                else:
-                    job["status"] = "error"
-                    job["error"] = f"yt-dlp error: {dl_result.stderr[:200]}"
+                # Provide full error for debugging
+                job["status"] = "error"
+                job["error"] = f"yt-dlp failed: {dl_result.stderr[:400]}"
                 return
 
             matches = glob.glob(f"{tmp_dir}/audio.*")
@@ -780,7 +785,7 @@ async def _run_url_pipeline_background(
             progress(f"Downloaded {size_mb:.1f} MB. Processing...")
 
         from core.pipeline import Pipeline, PipelineError
-        pipeline = Pipeline(source_lang=source_lang or None)
+        pipeline = Pipeline(source_lang=source_lang or None, fast_mode=fast_mode)
         transcript, summary, files = await asyncio.to_thread(
             pipeline.run_in_memory,
             tmp_path,

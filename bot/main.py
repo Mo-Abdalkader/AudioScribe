@@ -13,9 +13,10 @@ from telegram.ext import (
 
 import config
 from bot.handlers import (
-    cmd_start, cmd_help, cmd_lang, cmd_style, cmd_cancel, handle_file,
-    cmd_summary_style, cmd_summary_tone, cmd_key, cmd_info, handle_message,
-    cmd_settings, handle_callback, cmd_mode, cmd_subtitle_lang
+    cmd_start, cmd_help, cmd_info, cmd_settings, cmd_mode, cmd_subtitle_lang,
+    cmd_lang, cmd_style, cmd_summary_style, cmd_summary_tone,
+    cmd_key, cmd_fastmode, cmd_cancel,
+    handle_file, handle_message, handle_callback,
 )
 
 logger = logging.getLogger(__name__)
@@ -66,6 +67,7 @@ def build_app() -> Application:
     app.add_handler(CommandHandler("summary_style", cmd_summary_style))
     app.add_handler(CommandHandler("summary_tone", cmd_summary_tone))
     app.add_handler(CommandHandler("key", cmd_key))
+    app.add_handler(CommandHandler("fastmode", cmd_fastmode))
     app.add_handler(CommandHandler("cancel", cmd_cancel))
 
     # Inline keyboard button callbacks

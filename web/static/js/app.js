@@ -469,6 +469,8 @@ async function startProcessingUrl() {
   formData.append('mode', mode);
   formData.append('subtitle_langs', subtitleLangs);
   if (groqKey) formData.append('groq_key', groqKey);
+  const fastModeCheck = document.getElementById('fastModeCheck');
+  if (groqKey && fastModeCheck?.checked) formData.append('fast_mode', 'true');
 
   urlSubmitBtn.disabled = true;
   urlSubmitBtn.textContent = 'Processing...';
@@ -522,6 +524,8 @@ async function startProcessing() {
   formData.append('mode', mode);
   formData.append('subtitle_langs', subtitleLangs);
   if (groqKey) formData.append('groq_key', groqKey);
+  const fastModeCheck = document.getElementById('fastModeCheck');
+  if (groqKey && fastModeCheck?.checked) formData.append('fast_mode', 'true');
 
   // UI: switch to processing mode
   processBtn.disabled = true;
@@ -775,6 +779,24 @@ document.addEventListener('DOMContentLoaded', () => {
   // Register service worker for PWA support
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').catch(() => {});
+  }
+
+  // Fast Mode toggle — enabled only when user enters their own API key
+  const groqInput = document.getElementById('groqKeyInput');
+  const fastCheck = document.getElementById('fastModeCheck');
+  const fastLabel = document.getElementById('fastModeLabel');
+  const fastHint  = document.getElementById('fastModeHint');
+  if (groqInput && fastCheck && fastLabel && fastHint) {
+    const updateFastMode = () => {
+      const hasKey = groqInput.value.trim().length > 0;
+      fastCheck.disabled = !hasKey;
+      fastLabel.style.opacity = hasKey ? '1' : '0.5';
+      fastHint.innerHTML = hasKey
+        ? '⚠️ Free API keys have limits (TPM &amp; RPM). Only enable if your key has sufficient quota. If you hit errors, disable fast mode.'
+        : '🔑 Enter your API key above to enable Fast Mode &mdash; reduces delays for quicker processing.';
+    };
+    groqInput.addEventListener('input', updateFastMode);
+    updateFastMode();
   }
 
   // Smooth scroll for nav links

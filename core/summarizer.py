@@ -36,9 +36,10 @@ class SummarizerError(Exception):
 
 
 class Summarizer:
-    def __init__(self):
+    def __init__(self, fast_mode: bool = False):
         self._style = "detailed"
         self._tone = "professional"
+        self.fast_mode = fast_mode
 
     def summarize(
         self,
@@ -120,7 +121,7 @@ class Summarizer:
             prompt = self._chunk_prompt(chunk, lang)
             summary = self._call_llm(client, provider, prompt, max_tokens=config.SUMMARY_CHUNK_MAX_TOKENS)
             chunk_summaries.append(summary)
-            if i < len(chunks) - 1:
+            if not self.fast_mode and i < len(chunks) - 1:
                 time.sleep(0.3)
 
         combined = " ".join(chunk_summaries)

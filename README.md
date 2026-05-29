@@ -126,6 +126,21 @@ TELEGRAM_BOT_TOKEN=your_token_here
 GROQ_API_KEYS=your_gsk_key_here
 ```
 
+### ⚡ Fast Mode (Speed Up Processing)
+
+By default, AudioScribe adds small delays between API calls to stay within the shared key's rate limits. If you enter your **own Groq API key**, you can enable **Fast Mode** to remove those delays and process files faster.
+
+**How to enable:**
+- **Web UI:** Enter your API key in step 5 → a "Fast Mode" checkbox appears
+- **Telegram Bot:** Set your key with `/key gsk_...` → then run `/fastmode`
+
+**Important:** Free Groq API keys have limits:
+- **TPM** (Tokens Per Minute) — typically 500K for free keys
+- **RPM** (Requests Per Minute) — typically 20 for free keys
+- **TPD** (Tokens Per Day) — 100K for free keys
+
+Fast Mode sends requests faster = higher throughput, but you may hit these limits. If you see rate limit errors, disable Fast Mode or upgrade to a [paid Groq plan](https://console.groq.com/usage).
+
 ### Run
 
 ```bash

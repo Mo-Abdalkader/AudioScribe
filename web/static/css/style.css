@@ -1397,3 +1397,108 @@ details[open] .advanced-arrow { transform: rotate(180deg); }
 #outputLangGroup.hidden,
 #summaryDetailGroup.hidden,
 #summaryOptionsStep.hidden { display: none; }
+
+/* ================================================================
+   MOBILE RESPONSIVENESS FIXES — v14
+   ================================================================ */
+
+/* Extra small devices (phones < 480px) */
+@media (max-width: 480px) {
+  .nav-inner { padding: 0 12px; }
+  .nav-links { gap: 10px; }
+  .nav-links a:not(.nav-cta) { display: none; }
+  .nav-cta { font-size: 12px; padding: 5px 12px; }
+  .theme-toggle { padding: 4px 8px; font-size: 11px; }
+  .theme-toggle .theme-icon { font-size: 12px; }
+  .logo-text { font-size: 15px; }
+  .nav-logo-img { width: 26px !important; height: 26px !important; }
+  .hero { padding: 60px 16px 40px !important; }
+  .hero-title { font-size: clamp(28px, 8vw, 36px) !important; letter-spacing: -1px; }
+  .hero-sub { font-size: 14px; margin-bottom: 24px; }
+  .hero-actions { flex-direction: column; align-items: stretch; }
+  .hero-actions .btn { justify-content: center; width: 100%; }
+  .hero-badge { font-size: 10px; padding: 4px 10px; }
+  .hero-formats { font-size: 11px; flex-wrap: wrap; }
+  .format-tags span { font-size: 9px; padding: 1px 6px; }
+  .container { padding: 0 12px; }
+  section { padding: 48px 0; }
+  .section-header { margin-bottom: 32px; }
+  .section-header h2 { font-size: 24px; }
+  .section-sub { font-size: 14px; }
+  .process-card { padding: 16px 12px !important; border-radius: 16px; }
+  .settings-step-header { padding: 10px 12px; gap: 10px; }
+  .settings-step-header strong { font-size: 13px; }
+  .settings-step-sub { font-size: 11px; }
+  .settings-step-body { padding: 12px; }
+  .settings-step-num { width: 24px; height: 24px; font-size: 10px; }
+  .dropzone { padding: 28px 12px; }
+  .dropzone-text { font-size: 14px; }
+  .dropzone-sub { font-size: 11px; }
+  .dropzone-preview { flex-wrap: wrap; gap: 8px; }
+  .preview-name { font-size: 13px; }
+  .lang-settings-grid { grid-template-columns: 1fr; }
+  .summary-opts-grid { grid-template-columns: 1fr; }
+  .mode-cards { grid-template-columns: 1fr 1fr; }
+  .radio-item { font-size: 12px; padding: 6px 10px; }
+  .url-input-wrap { flex-direction: column; gap: 8px; }
+  .url-input-wrap .btn { width: 100%; justify-content: center; }
+  .option-hint { font-size: 11px; }
+  .text-input { font-size: 13px !important; padding: 10px 12px; }
+  .progress-card { padding: 20px 16px !important; border-radius: 16px; }
+  .results-card { padding: 20px 16px !important; border-radius: 16px; }
+  .error-card { padding: 20px 16px !important; border-radius: 16px; flex-direction: column; text-align: center; }
+  .transcript-preview { padding: 14px 16px; }
+  .transcript-text { font-size: 12px; max-height: 100px; }
+  .download-item { padding: 10px 14px; }
+  .download-item-name { font-size: 12px; }
+  .hero-orb--1 { width: 200px; height: 200px; top: -50px; left: -80px; }
+  .hero-orb--2 { width: 150px; height: 150px; }
+  .tg-card { padding: 28px 20px; }
+  .tg-content h3 { font-size: 18px; }
+  .tg-content p { font-size: 13px; }
+  .footer-inner { grid-template-columns: 1fr; gap: 20px; }
+  .footer { padding: 32px 0 16px; }
+  .flow-step { padding: 8px 12px; }
+  .flow-step-body strong { font-size: 11px; }
+  .flow-step-body span { font-size: 10px; }
+  .flow-step-icon { font-size: 16px; }
+  .flow-source { padding: 10px 14px; min-width: 100px; font-size: 12px; }
+  .flow-source-icon { font-size: 18px; }
+  .flow-source-sub { font-size: 10px; }
+  .flow-output { padding: 6px 12px; font-size: 11px; }
+  .stat-item { padding: 12px 14px; }
+  .stat-num { font-size: 18px; }
+  .stat-label { font-size: 10px; }
+  .stats-bar { gap: 0; }
+  .developer-card { padding: 20px; gap: 16px; }
+  .developer-avatar { width: 56px !important; height: 56px !important; min-width: 56px; }
+  .developer-name { font-size: 17px; }
+  .developer-bio { font-size: 13px; }
+  .dev-link { font-size: 11px; padding: 5px 12px; }
+  .results-header { flex-wrap: wrap; gap: 12px; }
+  .results-check { width: 40px; height: 40px; font-size: 18px; }
+  .results-header h3 { font-size: 17px; }
+  .export-buttons { flex-direction: column; }
+  .export-btn { width: 100%; justify-content: center; }
+  .feature-card { padding: 20px; }
+  .feature-card h3 { font-size: 16px; }
+  .feature-card p { font-size: 13px; }
+  .stat-num.feature-stat .stat-num { font-size: 28px; }
+  .history-item { padding: 6px 10px; }
+  .history-name { font-size: 12px; }
+}
+
+/* Very small screens (< 360px) */
+@media (max-width: 360px) {
+  .mode-cards { grid-template-columns: 1fr; }
+  .nav-cta { font-size: 10px; padding: 4px 8px; }
+  .logo-text { font-size: 13px; }
+  .hero-title { font-size: 24px !important; }
+  .hero { padding: 40px 12px 32px !important; }
+  .hero-sub { font-size: 13px; }
+  .format-tags span { font-size: 8px; padding: 1px 4px; }
+  .process-card { padding: 12px 8px !important; }
+  .settings-step-header { padding: 8px 10px; }
+  .settings-step-body { padding: 8px; }
+  .radio-item { font-size: 11px; padding: 4px 8px; }
+}

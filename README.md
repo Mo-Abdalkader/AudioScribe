@@ -15,7 +15,7 @@
 
 ### 🌐 Live App
 
-**Try it now:** Deploy your own (see below) — Railway credits expired
+**Try it now:** [@Live Demo](https://audioscribe-production.up.railway.app/)
 
 ### 🤖 Telegram Bot
 
